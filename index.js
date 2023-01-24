@@ -6,7 +6,7 @@ const app = express()
 const logger=require('./loggerMiddleware')
 
 //permite a todos los servidores hacer peticiones a este servidor
-app.use(cors())
+//app.use(cors())
 //  para crear por post
 app.use(express.json())
 
@@ -96,7 +96,7 @@ app.use( ( request , response)=> {
     })
 })
 //  const port = 3001;
-const port = 3001
+const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`)
 })
