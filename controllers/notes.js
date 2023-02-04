@@ -4,16 +4,10 @@ const notesRouter = require('express').Router()
 
 const Note = require('../models/Note')
 const User = require('../models/user.js')
-//notesRouter.use(logger)
-//  api crea un servidor
-/*
-    const app = http.createServer((request, response) => {
-    //tipo de datos que debemos devolver es json
-    response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.end(JSON.stringify(notes));
-});
-*/
-//
+
+const userExtractor = require('../middleware/userExtractor')
+ 
+
 notesRouter.get('/',async  (request, response) => {
     const notes = await Note.find({}).populate('user', {
         username: 1, 
@@ -36,7 +30,7 @@ notesRouter.get('/:id', (request, response,next) => {
 
 })
 //actualizar
-notesRouter.put('/:id', (request, response, next) => {
+notesRouter.put('/:id', userExtractor,(request, response, next) => {
     const { id } = request.params
 
     const note = request.body
@@ -52,9 +46,9 @@ notesRouter.put('/:id', (request, response, next) => {
         }).catch(next)
 
 }) 
-
+ 
 //eliminar
-notesRouter.delete('/:id', async (request, response, next) => {
+notesRouter.delete('/:id',userExtractor, async (request, response, next) => {
 const { id } = request.params
     // const note = await Note.findById(id)
     // if (!note) return response.sendStatus(404)
@@ -64,17 +58,23 @@ const { id } = request.params
 
     response.status(204).end()
     })
-//crear una nota
-notesRouter.post('/', async (request, response, next) => {
+//crear una nota // userExtractor es un middleware ahora para devolver el id del usuario
+notesRouter.post('/',userExtractor, async (request, response, next) => {
     const { content
-    , important = false, userId } = request.body
+    , important = false 
+    } = request.body
+    // si no hay token  no se puede crear una nota
+    //recuperamos el id del usuario
+    const { userId } = request
 
+    //
     const user = await User.findById(userId)
+ 
     if (!content) {
         return response.status(400).json({
         error: 'required "content" field is missing'
         })
-    }
+    }  
  
     const newNote = new Note({
         content: content,
@@ -82,10 +82,6 @@ notesRouter.post('/', async (request, response, next) => {
         important: important || false,
         user : user._id        
     }) 
-
-    // newNote.save().then(savedNote => {
-    //   response.json(savedNote)
-    // }).catch(err => next(err))
 
     try {
         const savedNote = await newNote.save()
@@ -101,3 +97,15 @@ notesRouter.post('/', async (request, response, next) => {
 })
 
 module.exports = notesRouter
+
+
+//notesRouter.use(logger)
+//  api crea un servidor
+/*
+    const app = http.createServer((request, response) => {
+    //tipo de datos que debemos devolver es json
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify(notes));
+});
+*/
+//
